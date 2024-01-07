@@ -4,7 +4,7 @@ const MAX_UPDATES = 10;
 
 export const defineForm = <
   TFormControl extends {
-    control: any;
+    control: { enabled: boolean | undefined };
     build: (
       name: string,
       path: string | undefined,
@@ -29,29 +29,35 @@ export const defineForm = <
   let onUpdate: () => void = () => {};
   let getState: () => any = () => {};
 
-  const builded = control.build(name, undefined, undefined, (value: any) => {
-    if (isUpdating) {
-      return;
-    }
+  const builded = control.build(
+    name,
+    undefined,
+    undefined,
+    (value: any) => {
+      if (isUpdating) {
+        return;
+      }
 
-    isUpdating = true;
+      isUpdating = true;
 
-    let newState = value;
-    let oldState;
-    let counter = 0;
-    do {
-      oldState = newState;
-      onUpdate();
-      newState = getState();
-      counter++;
-    } while (newState !== oldState && counter <= MAX_UPDATES);
+      let newState = value;
+      let oldState;
+      let counter = 0;
+      do {
+        oldState = newState;
+        onUpdate();
+        newState = getState();
+        counter++;
+      } while (newState !== oldState && counter <= MAX_UPDATES);
 
-    if (counter >= MAX_UPDATES) {
-      throw new Error('unstable or too complex');
-    }
+      if (counter >= MAX_UPDATES) {
+        throw new Error('unstable or too complex');
+      }
 
-    isUpdating = false;
-  });
+      isUpdating = false;
+    },
+    () => !!control.control.enabled
+  );
 
   onUpdate = builded.onUpdate;
   getState = builded.getState;

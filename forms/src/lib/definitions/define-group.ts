@@ -122,7 +122,7 @@ const buildFactory =
   <
     TState,
     TControls extends object,
-    TWrapper extends { enabled: boolean | undefined },
+    TWrapper extends { disabled: boolean | undefined },
     TUpdater extends (wrapper: TWrapper) => void
   >(
     state: TState,
@@ -155,7 +155,7 @@ const buildFactory =
               },
             });
           },
-          () => !!wrapper.enabled
+          () => !wrapper.disabled
         );
         result.state[entry[0]] = r.getState();
         result.onUpdate[entry[0]] = r.onUpdate;

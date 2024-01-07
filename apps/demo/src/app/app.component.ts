@@ -15,8 +15,14 @@ import {
   selector: 'org-root',
   template: `<button (click)="increment()">Press me</button>
     <pre>{{ form | json }}</pre>
-    <label>{{ form.controls.text.title }}</label>
-    <input [control]="form.controls.text" />
+    <div>
+      <label>{{ form.controls.text.title }}</label>
+      <input [control]="form.controls.text" />
+    </div>
+    <div>
+      <label>{{ form.controls.subgroup.controls.x.title }}</label>
+      <input [control]="form.controls.subgroup.controls.x" />
+    </div>
     <pre>{{ state.getState() | json }}</pre>`,
   styleUrl: './app.component.css',
   providers: [CounterStore],
