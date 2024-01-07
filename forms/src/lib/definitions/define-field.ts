@@ -56,7 +56,11 @@ export const defineField = <
     },
     setValue: (value: TValue) => {
       if (value !== state.value) {
-        context.setState({ ...state, value });
+        if (value === '' || value === undefined) {
+          context.setState({ ...state, value: null });
+        } else {
+          context.setState({ ...state, value });
+        }
       }
     },
     setEditable: (editable: boolean | undefined) => {
