@@ -18,13 +18,13 @@ export const defineGroup = <
   const context = {
     path: undefined as string | undefined,
     parentEnabled: undefined as (() => boolean) | undefined,
+    setState: (value: typeof state) => {
+      return (state = value);
+    },
+    getState: () => state,
   };
 
-  let setState = (value: typeof state) => {
-    state = value;
-  };
-
-  const getUpdaters = <TValue, TControls>(controls: TControls) => ({
+  const getWrapper = <TValue, TControls>(controls: TControls) => ({
     get value() {
       return {} as TValue;
     },
@@ -57,23 +57,24 @@ export const defineGroup = <
     },
     setEditable: (editable: boolean | undefined) => {
       if (editable !== state.editable) {
-        setState({ ...state, editable });
+        context.setState({ ...state, editable });
       }
     },
     setEnabled: (enabled: boolean | undefined) => {
       if (enabled !== state.enabled) {
-        setState({ ...state, enabled });
+        context.setState({ ...state, enabled });
       }
     },
   });
 
-  const updaters = getUpdaters<TValue, Record<string, never>>({});
+  const wrapper = getWrapper<TValue, Record<string, never>>({});
 
   return {
+    control: wrapper,
+    build: buildFactory(state, context, {}, wrapper),
     withControls: <
       TControls extends {
         [id: string]: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           build: (
             name: string,
             path: string | undefined,
@@ -87,106 +88,115 @@ export const defineGroup = <
     >(
       controls: TControls
     ) => {
-      const updaters = getUpdaters<
+      const wrapper = getWrapper<
         Expand<TValue & GetGroupControlsValue<TControls>>,
         Expand<GetGroupControls<TControls>>
       >(
         Object.entries(controls).reduce((result, entry) => {
           result[entry[0]] = entry[1].control;
           return result;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }, {} as any)
       );
 
       return {
-        onUpdate: (x: (group: typeof updaters) => void) => {
+        control: wrapper,
+        build: buildFactory(state, context, controls, wrapper),
+        onUpdate: (updater: (group: typeof wrapper) => void) => {
           return {
-            control: updaters,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            build: (
-              name: string,
-              path?: string,
-              initialState?: any,
-              updateState?: (controlState: any) => void,
-              parentEnabled?: () => boolean
-            ) => {
-              const controlStates = Object.entries(controls).reduce(
-                (result, entry) => {
-                  const r = entry[1].build(
-                    entry[0],
-                    context.path,
-                    initialState?.controls[entry[0]],
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    (controlState: any) => {
-                      setState({
-                        ...state,
-                        controls: {
-                          ...state.controls,
-                          [entry[0]]: controlState,
-                        },
-                      });
-                    },
-                    () => !!updaters.enabled
-                  );
-                  result.state[entry[0]] = r.getState();
-                  result.onUpdate[entry[0]] = r.onUpdate;
-                  return result;
-                },
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                { state: {}, onUpdate: {} } as any
-              );
-
-              if (initialState) {
-                state = initialState;
-              } else {
-                state = { ...state, controls: controlStates.state };
-              }
-
-              const y = () => {
-                Object.values<() => void>(controlStates.onUpdate).forEach(
-                  (onUpdate) => onUpdate()
-                );
-                x(updaters);
-              };
-
-              if (updateState) {
-                const originalSetState = setState;
-                setState = (value) => {
-                  originalSetState(value);
-                  updateState(state);
-                };
-              }
-              context.path =
-                [path, name].filter((item) => !!item).join('.') ?? undefined;
-              context.parentEnabled = parentEnabled;
-
-              return {
-                getState: () =>
-                  state as unknown as Expand<
-                    TConfig & {
-                      controls: Expand<GetGroupControlsState<TControls>>;
-                    }
-                  >,
-                onUpdate: y,
-              };
-            },
+            control: wrapper,
+            build: buildFactory(state, context, controls, wrapper, updater),
           };
         },
       };
     },
-    onUpdate: (x: (group: typeof updaters) => void) => {
+    onUpdate: (x: (group: typeof wrapper) => void) => {
       return {
-        control: updaters,
-        build: ([name]: [string]) => {
-          state = { ...state, name };
-          return {
-            getState: () => state,
-            onUpdate: () => {
-              x(updaters);
-            },
-          };
-        },
+        control: wrapper,
+        build: buildFactory(state, context, {}, wrapper, x),
       };
     },
   };
 };
+
+const buildFactory =
+  <
+    TState,
+    TControls extends object,
+    TWrapper extends { enabled: boolean | undefined },
+    TUpdater extends (wrapper: TWrapper) => void
+  >(
+    state: TState,
+    context: any,
+    controls: TControls,
+    wrapper: TWrapper,
+    updater?: TUpdater
+    // validator?: () => any
+  ) =>
+  (
+    name: string,
+    path: string | undefined,
+    initialState: any,
+    updateState: (controlState: any) => void,
+    parentEnabled?: () => boolean
+  ) => {
+    const controlStates = Object.entries(controls).reduce(
+      (result, entry) => {
+        const r = entry[1].build(
+          entry[0],
+          context.path,
+          initialState?.controls[entry[0]],
+          (controlState: any) => {
+            const state = context.getState();
+            context.setState({
+              ...state,
+              controls: {
+                ...state.controls,
+                [entry[0]]: controlState,
+              },
+            });
+          },
+          () => !!wrapper.enabled
+        );
+        result.state[entry[0]] = r.getState();
+        result.onUpdate[entry[0]] = r.onUpdate;
+        return result;
+      },
+      { state: {}, onUpdate: {} } as any
+    );
+
+    if (initialState) {
+      context.setState(initialState);
+    } else {
+      const newState = context.setState({
+        ...context.getState,
+        controls: controlStates.state,
+      });
+      updateState?.(newState);
+    }
+
+    const onUpdateAll = () => {
+      Object.values<() => void>(controlStates.onUpdate).forEach((onUpdate) =>
+        onUpdate()
+      );
+      updater?.(wrapper);
+    };
+
+    const originalSetState = context.setState;
+    context.setState = (value: TState) => {
+      const state = originalSetState(value);
+      updateState(state);
+    };
+
+    context.path = [path, name].filter((item) => !!item).join('.') ?? undefined;
+    context.parentEnabled = parentEnabled;
+
+    return {
+      getState: () =>
+        context.getState() as unknown as Expand<
+          TState & {
+            controls: Expand<GetGroupControlsState<TControls>>;
+          }
+        >,
+      onUpdate: onUpdateAll,
+    };
+  };
