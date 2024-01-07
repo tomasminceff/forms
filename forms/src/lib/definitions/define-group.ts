@@ -76,9 +76,9 @@ export const defineGroup = <
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           build: (
             name: string,
-            path?: string,
-            initialState?: any,
-            updateState?: (controlState: any) => void,
+            path: string | undefined,
+            initialState: any,
+            updateState: (controlState: any) => void,
             parentEnabled?: () => boolean
           ) => any;
           control: unknown;

@@ -38,7 +38,7 @@ export class AppComponent {
             .onUpdate((x) => {
               x;
             })
-            .validate(),
+            .validate(() => {}),
         })
         .onUpdate((subgroup) => {
           subgroup;

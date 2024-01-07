@@ -17,13 +17,13 @@ export const defineField = <
   const context = {
     path: undefined as string | undefined,
     parentEnabled: undefined as (() => boolean) | undefined,
+    setState: (value: typeof state) => {
+      return (state = value);
+    },
+    getState: () => state,
   };
 
-  let setState = (value: typeof state) => {
-    state = value;
-  };
-
-  const updaters = {
+  const wrapper = {
     get title() {
       return state.title;
     },
@@ -56,17 +56,17 @@ export const defineField = <
     },
     setValue: (value: TValue) => {
       if (value !== state.value) {
-        setState({ ...state, value });
+        context.setState({ ...state, value });
       }
     },
     setEditable: (editable: boolean | undefined) => {
       if (editable !== state.editable) {
-        setState({ ...state, editable });
+        context.setState({ ...state, editable });
       }
     },
     setEnabled: (enabled: boolean | undefined) => {
       if (enabled !== state.enabled) {
-        setState({ ...state, enabled });
+        context.setState({ ...state, enabled });
       }
     },
     validate: (x: () => Record<string, object>) => {
@@ -76,74 +76,65 @@ export const defineField = <
   };
 
   return {
-    control: updaters,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    build: (
-      name: string,
-      parentPath?: string,
-      initialState?: any,
-      updateState?: (controlState: any) => void,
-      parentEnabled?: () => boolean
-    ) => {
-      if (initialState) {
-        state = initialState;
-      }
-
-      context.path = [parentPath, name].filter((item) => !!item).join('.');
-      context.parentEnabled = parentEnabled;
-
-      if (updateState) {
-        const originalSetState = setState;
-        setState = (value) => {
-          originalSetState(value);
-          updateState(state);
-        };
-      }
-
-      return { getState: () => state };
-    },
-    onUpdate: (x: (field: typeof updaters) => void) => {
-      const buildFactory = (
-        name: string,
-        parentPath?: string,
-        initialState?: any,
-        updateState?: (controlState: any) => void,
-        parentEnabled?: () => boolean
-      ) => {
-        if (updateState) {
-          const originalSetState = setState;
-          setState = (value) => {
-            originalSetState(value);
-            updateState(state);
-          };
-        }
-
-        if (initialState) {
-          state = initialState;
-        }
-
-        context.path = [parentPath, name].filter((item) => !!item).join('.');
-        context.parentEnabled = parentEnabled;
-
-        return {
-          getState: () => state as unknown as Expand<typeof state>,
-          onUpdate: () => {
-            x(updaters);
-          },
-        };
-      };
-      const afterOnUpdate = {
-        control: updaters,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        build: buildFactory,
-      };
-
+    control: wrapper,
+    build: buildFactory(state, context, wrapper, undefined),
+    onUpdate: (updater: (field: typeof wrapper) => void) => {
       return {
-        ...afterOnUpdate,
-        validate: () => {
-          return afterOnUpdate;
+        control: wrapper,
+        build: buildFactory(state, context, wrapper, updater),
+        validate: (validator: () => any) => {
+          return {
+            control: wrapper,
+            build: buildFactory(state, context, wrapper, updater, validator),
+          };
         },
+      };
+    },
+    validate: (validator: () => any) => {
+      return {
+        control: wrapper,
+        build: buildFactory(state, context, wrapper, undefined, validator),
       };
     },
   };
 };
+
+const buildFactory =
+  <TState, TWrapper, TUpdater extends (wrapper: TWrapper) => void>(
+    state: TState,
+    context: any,
+    wrapper: TWrapper,
+    updater?: TUpdater,
+    validator?: () => any
+  ) =>
+  (
+    name: string,
+    parentPath: string | undefined,
+    initialState: TState | undefined,
+    updateState: (controlState: TState) => void,
+    parentEnabled?: () => boolean
+  ) => {
+    if (initialState) {
+      context.setState(initialState);
+    } else {
+      updateState(state);
+    }
+
+    const originalSetState = context.setState;
+    context.setState = (value: TState) => {
+      const newState = originalSetState(value);
+      updateState(newState);
+      return newState;
+    };
+
+    context.path = [parentPath, name].filter((item) => !!item).join('.');
+    context.parentEnabled = parentEnabled;
+
+    return {
+      getState: () => context.getState() as unknown as Expand<typeof state>,
+      onUpdate: () => {
+        updater?.(wrapper);
+      },
+      validator,
+    };
+  };

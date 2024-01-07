@@ -7,9 +7,9 @@ export const defineForm = <
     control: any;
     build: (
       name: string,
-      path?: string,
-      initialState?: any,
-      updateState?: (controlState: any) => void,
+      path: string | undefined,
+      initialState: any,
+      updateState: (controlState: any) => void,
       parentEnabled?: () => boolean
     ) => {
       getState: () => any;

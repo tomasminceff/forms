@@ -4,3 +4,4 @@ export * from './lib/definitions/define-field';
 export type * from './lib/definitions/define-field.types';
 export * from './lib/definitions/define-group';
 export type * from './lib/definitions/define-group.types';
+export * from './lib/validators';
