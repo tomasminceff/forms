@@ -19,7 +19,12 @@ export const defineForm = <
 >(
   name: string,
   control: TFormControl
-) => {
+): TFormControl extends {
+  control: infer IControl;
+  build: (...ars: infer IParams) => { getState: infer IGetState };
+}
+  ? { control: IControl; getState: IGetState }
+  : never => {
   let isUpdating = false;
   let onUpdate: () => void = () => {};
   let getState: () => any = () => {};
@@ -54,5 +59,5 @@ export const defineForm = <
   return {
     getState: builded.getState,
     control: control.control,
-  };
+  } as any;
 };

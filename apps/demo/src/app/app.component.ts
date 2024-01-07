@@ -48,8 +48,8 @@ export class AppComponent {
       group.controls.subgroup.controls.x;
     });
 
-  form = this.definition.control;
   state = defineForm('form', this.definition);
+  form = this.state.control;
 
   increment() {
     this.form.setEnabled(!this.form.enabled);

@@ -26,3 +26,11 @@ export type GetGroupControls<TControls> = {
     ? TControlDefinition
     : never;
 };
+
+export type GetGroupControlsState<TControls> = {
+  [K in keyof TControls]: TControls[K] extends {
+    build: (...ars: infer IParams) => { getState: () => infer IGetState };
+  }
+    ? IGetState
+    : never;
+};

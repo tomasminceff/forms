@@ -4,6 +4,7 @@ import type {
   GroupConfig,
   GetGroupControlsValue,
   GetGroupControls,
+  GetGroupControlsState,
 } from './define-group.types';
 
 export const defineGroup = <
@@ -159,7 +160,15 @@ export const defineGroup = <
                 [path, name].filter((item) => !!item).join('.') ?? undefined;
               context.parentEnabled = parentEnabled;
 
-              return { getState: () => state, onUpdate: y };
+              return {
+                getState: () =>
+                  state as unknown as Expand<
+                    TConfig & {
+                      controls: Expand<GetGroupControlsState<TControls>>;
+                    }
+                  >,
+                onUpdate: y,
+              };
             },
           };
         },

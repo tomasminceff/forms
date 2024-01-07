@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Expand } from '../utils/types';
 import type { FieldConfig } from './define-field.types';
 
 export const defineField = <
@@ -68,6 +69,10 @@ export const defineField = <
         setState({ ...state, enabled });
       }
     },
+    validate: (x: () => Record<string, object>) => {
+      const result = x();
+      result;
+    },
   };
 
   return {
@@ -98,38 +103,39 @@ export const defineField = <
       return { getState: () => state };
     },
     onUpdate: (x: (field: typeof updaters) => void) => {
+      const buildFactory = (
+        name: string,
+        parentPath?: string,
+        initialState?: any,
+        updateState?: (controlState: any) => void,
+        parentEnabled?: () => boolean
+      ) => {
+        if (updateState) {
+          const originalSetState = setState;
+          setState = (value) => {
+            originalSetState(value);
+            updateState(state);
+          };
+        }
+
+        if (initialState) {
+          state = initialState;
+        }
+
+        context.path = [parentPath, name].filter((item) => !!item).join('.');
+        context.parentEnabled = parentEnabled;
+
+        return {
+          getState: () => state as unknown as Expand<typeof state>,
+          onUpdate: () => {
+            x(updaters);
+          },
+        };
+      };
       const afterOnUpdate = {
         control: updaters,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        build: (
-          name: string,
-          parentPath?: string,
-          initialState?: any,
-          updateState?: (controlState: any) => void,
-          parentEnabled?: () => boolean
-        ) => {
-          if (updateState) {
-            const originalSetState = setState;
-            setState = (value) => {
-              originalSetState(value);
-              updateState(state);
-            };
-          }
-
-          if (initialState) {
-            state = initialState;
-          }
-
-          context.path = [parentPath, name].filter((item) => !!item).join('.');
-          context.parentEnabled = parentEnabled;
-
-          return {
-            getState: () => state,
-            onUpdate: () => {
-              x(updaters);
-            },
-          };
-        },
+        build: buildFactory,
       };
 
       return {
