@@ -4,9 +4,10 @@ import { CounterStore } from './app.component.store';
 import { CommonModule } from '@angular/common';
 import {
   InputDirective,
-  defineField,
   defineForm,
   defineGroup,
+  defineNumberField,
+  defineStringField,
 } from '@org/forms';
 
 @Component({
@@ -33,16 +34,16 @@ export class AppComponent {
 
   definition = defineGroup<{ a: number }>({ title: 'group' })
     .withControls({
-      text: defineField({ title: 'pokus', x: 1 }).onUpdate((field) => {
+      text: defineStringField({ title: 'pokus', x: 1 }).onUpdate((field) => {
         if (field.disabled) {
           field.setValue(null);
         }
       }),
       subgroup: defineGroup({ title: 'subgroup' })
         .withControls({
-          x: defineField({ title: 'x' })
+          x: defineNumberField({ title: 'x' })
             .onUpdate((x) => {
-              x;
+              x.increment();
             })
             .validate(() => {}),
         })

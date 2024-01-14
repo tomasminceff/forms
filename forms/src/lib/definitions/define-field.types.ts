@@ -1,13 +1,16 @@
-export type FieldConfig<TValue> = {
-  title: string;
-  defaultValue?: TValue;
+import {
+  AbstractControlConfig,
+  ControlContext,
+  AbstractControlState,
+} from './abstract-control';
 
-  editable?: boolean;
-  enabled?: boolean;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type FieldConfig<TValue> = AbstractControlConfig<TValue> & {};
 
-  /** use {@link FieldConfig.editable | editable property} */
-  readonly?: never;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type FieldState<TValue> = AbstractControlState<TValue> & {};
 
-  /** use {@link FieldConfig.enabled | editable property} */
-  disabled?: never;
-};
+export type FieldContext<
+  TValue,
+  TState extends FieldState<TValue>
+> = ControlContext<TValue, TState>;

@@ -1,95 +1,38 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Expand } from '../utils/types';
-import type { FieldConfig } from './define-field.types';
+import { AbstractControlState, ControlContext } from './abstract-control';
+import { Wrapper, baseControlWrapperFactory } from './base-wrapper';
+import type { FieldConfig, FieldState } from './define-field.types';
 
 export const defineField = <
-  TValue = string | null,
-  TConfig extends FieldConfig<TValue> = FieldConfig<TValue>
+  TValue,
+  TConfig extends FieldConfig<TValue>,
+  TWrapper extends Wrapper<TValue>
 >(
-  config: TConfig
+  defaultValue: TValue,
+  config: TConfig,
+  wrapperFactory: (
+    context: ControlContext<TValue, FieldState<TValue>>
+  ) => TWrapper
 ) => {
-  let state = {
-    type: 'text' as const,
-    value: config.defaultValue ?? null,
+  const state: FieldState<TValue> = {
+    value: defaultValue,
     ...config,
   };
 
-  const context = {
-    path: undefined as string | undefined,
-    parentEnabled: undefined as (() => boolean) | undefined,
-    setState: (value: typeof state) => {
-      return (state = value);
-    },
-    getState: () => state,
-  };
-
-  const wrapper = {
-    get title() {
-      return state.title;
-    },
-    get path() {
-      return context.path;
-    },
-    get defaultValue() {
-      return state.defaultValue;
-    },
-    get type() {
-      return state.type;
-    },
-    get value() {
-      return state.value;
-    },
-    get editable() {
-      return state.editable;
-    },
-    get enabled() {
-      return state.enabled;
-    },
-    get readonly() {
-      return !state.editable /** TODO */;
-    },
-    get disabled() {
-      return (
-        (context.parentEnabled ? !context.parentEnabled() : false) ||
-        state.enabled === false
-      );
-    },
-    setValue: (value: TValue) => {
-      if (value !== state.value) {
-        if (value === '' || value === undefined) {
-          context.setState({ ...state, value: null });
-        } else {
-          context.setState({ ...state, value });
-        }
-      }
-    },
-    setEditable: (editable: boolean | undefined) => {
-      if (editable !== state.editable) {
-        context.setState({ ...state, editable });
-      }
-    },
-    setEnabled: (enabled: boolean | undefined) => {
-      if (enabled !== state.enabled) {
-        context.setState({ ...state, enabled });
-      }
-    },
-    validate: (x: () => Record<string, object>) => {
-      const result = x();
-      result;
-    },
-  };
+  const context = new ControlContext<TValue, FieldState<TValue>>(state);
+  const wrapper = wrapperFactory(context);
 
   return {
     control: wrapper,
-    build: buildFactory(state, context, wrapper, undefined),
+    build: buildFactory(context, wrapper, undefined),
     onUpdate: (updater: (field: typeof wrapper) => void) => {
       return {
         control: wrapper,
-        build: buildFactory(state, context, wrapper, updater),
+        build: buildFactory(context, wrapper, updater),
         validate: (validator: () => any) => {
           return {
             control: wrapper,
-            build: buildFactory(state, context, wrapper, updater, validator),
+            build: buildFactory(context, wrapper, updater, validator),
           };
         },
       };
@@ -97,16 +40,20 @@ export const defineField = <
     validate: (validator: () => any) => {
       return {
         control: wrapper,
-        build: buildFactory(state, context, wrapper, undefined, validator),
+        build: buildFactory(context, wrapper, undefined, validator),
       };
     },
   };
 };
 
 const buildFactory =
-  <TState, TWrapper, TUpdater extends (wrapper: TWrapper) => void>(
-    state: TState,
-    context: any,
+  <
+    TValue,
+    TState extends AbstractControlState<TValue>,
+    TWrapper,
+    TUpdater extends (wrapper: TWrapper) => void
+  >(
+    context: ControlContext<TValue, TState>,
     wrapper: TWrapper,
     updater?: TUpdater,
     validator?: () => any
@@ -121,24 +68,29 @@ const buildFactory =
     if (initialState) {
       context.setState(initialState);
     } else {
-      updateState(state);
+      updateState(context.getState());
     }
-
-    const originalSetState = context.setState;
-    context.setState = (value: TState) => {
-      const newState = originalSetState(value);
-      updateState(newState);
-      return newState;
-    };
 
     context.path = [parentPath, name].filter((item) => !!item).join('.');
     context.parentEnabled = parentEnabled;
+    context.updateState = updateState;
 
     return {
-      getState: () => context.getState() as unknown as Expand<typeof state>,
+      getState: () => context.getState(),
       onUpdate: () => {
         updater?.(wrapper);
       },
       validator,
     };
   };
+
+export const fieldWrapperFactory = <
+  TValue,
+  TState extends FieldState<TValue> = FieldState<TValue>
+>(
+  context: ControlContext<TValue, TState>
+) => {
+  return baseControlWrapperFactory<TValue>(context);
+};
+
+// bivariant hack: https://www.typescriptlang.org/play?ssl=4&ssc=101&pln=4&pc=1#code/MYGwhgzhAECCB2BLAtmE0De0AOAnRAbmAC4Cm0AHgFwCu8AJqQGaLyn3QC+AsAFCiQYAEQD2Ac2ikKZBjAQo0mHPiJlo9KtDqMWbDj159iAT2zkAQoTD4w8YgFECpOwAlb9EKVwAee5OnO9HJIqCAAfNAAvEoARlY28MCkbsAA1gAUpE52mvYAlJoEIoj6ANoARHFECUkpqeUAugDcRqbkjs7EbgyePn5SMkFwIWgR0ZnZxLl5URFFJXx8nsTQIrmT3R5e3vKhY9Dpa9CiYjOREVic0AD019BMYIggMNpe0BDE+MDEAGJ034gRPAACptCBLUgrEQAJk0lmqiFsDg27l6OxG4SiByOJzOFy4NzuHye6BEqWgWgYbw+X1+-2IgJBYOgQA
