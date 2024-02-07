@@ -24,6 +24,10 @@ import {
       <label>{{ form.controls.subgroup.controls.x.title }}</label>
       <input [control]="form.controls.subgroup.controls.x" />
     </div>
+    <div>
+      <label>{{ form.controls.subgroup.controls.y.title }}</label>
+      <input [control]="form.controls.subgroup.controls.y" />
+    </div>
     <pre>{{ state.getState() | json }}</pre>`,
   styleUrl: './app.component.css',
   providers: [CounterStore],
@@ -41,9 +45,14 @@ export class AppComponent {
       }),
       subgroup: defineGroup({ title: 'subgroup' })
         .withControls({
-          x: defineNumberField({ title: 'x' })
+          x: defineStringField({ title: 'x' })
+            .onUpdate(() => {})
+            .validate(() => {}),
+          y: defineNumberField({ title: 'y' })
             .onUpdate((x) => {
-              x.increment();
+              if (x.value === 1) {
+                x.increment();
+              }
             })
             .validate(() => {}),
         })
@@ -60,6 +69,11 @@ export class AppComponent {
 
   increment() {
     this.form.setEnabled(!this.form.enabled);
+  }
+
+  constructor() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any)['state'] = this.state;
   }
 }
 

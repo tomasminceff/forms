@@ -19,15 +19,25 @@ export const numberFieldWrapperFactory = <
 >(
   context: ControlContext<number | null, TState>
 ) => {
-  return {
-    ...fieldWrapperFactory<number | null>(context),
-    ...{
-      increment() {
-        const state = context.getState();
-        if (null !== state.value) {
-          context.setState({ ...state, value: state.value + 1 });
-        }
-      },
+  // must be Object.assign, deconstruction does not work
+  return Object.assign(fieldWrapperFactory<number | null>(context), {
+    setValue: (value: number | null) => {
+      if ((value as unknown) === '') {
+        value = null;
+      }
+      if (typeof value === 'string') {
+        value = parseFloat(value as string);
+      }
+      const state = context.getState();
+      if (value !== state.value) {
+        context.setState({ ...state, value });
+      }
     },
-  };
+    increment() {
+      const state = context.getState();
+      if (null !== state.value) {
+        context.setState({ ...state, value: state.value + 1 });
+      }
+    },
+  });
 };

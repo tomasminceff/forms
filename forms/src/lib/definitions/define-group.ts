@@ -48,7 +48,7 @@ export const defineGroup = <
     },
     get disabled() {
       return (
-        (context.parentEnabled ? !context.parentEnabled() : false) ||
+        (context.parentEnabled ? !context.parentEnabled() : true) ||
         state.enabled === false
       );
     },
@@ -80,7 +80,7 @@ export const defineGroup = <
             path: string | undefined,
             initialState: any,
             updateState: (controlState: any) => void,
-            parentEnabled?: () => boolean
+            parentEnabled: () => boolean
           ) => any;
           control: unknown;
         };
@@ -137,7 +137,7 @@ const buildFactory =
     path: string | undefined,
     initialState: any,
     updateState: (controlState: any) => void,
-    parentEnabled?: () => boolean
+    parentEnabled: () => boolean
   ) => {
     const controlStates = Object.entries(controls).reduce(
       (result, entry) => {

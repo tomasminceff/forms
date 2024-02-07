@@ -19,7 +19,10 @@ export const defineField = <
     ...config,
   };
 
-  const context = new ControlContext<TValue, FieldState<TValue>>(state);
+  const context = new ControlContext<TValue, FieldState<TValue>>(
+    state.value,
+    state
+  );
   const wrapper = wrapperFactory(context);
 
   return {
@@ -63,7 +66,7 @@ const buildFactory =
     parentPath: string | undefined,
     initialState: TState | undefined,
     updateState: (controlState: TState) => void,
-    parentEnabled?: () => boolean
+    parentEnabled: () => boolean
   ) => {
     if (initialState) {
       context.setState(initialState);

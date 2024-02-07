@@ -28,8 +28,9 @@ export class ControlContext<
   path: string | undefined;
   parentEnabled?: () => boolean;
   updateState?: (controlState: any) => void;
+  updateValue?: (value: any) => void;
 
-  constructor(private state: TState) {}
+  constructor(private value: TValue, private state: TState) {}
   getState() {
     return this.state;
   }
@@ -37,5 +38,14 @@ export class ControlContext<
     this.state = state;
     this.updateState?.(this.state);
     return this.state;
+  }
+
+  getValue() {
+    return this.value;
+  }
+  setValue(value: TValue) {
+    this.value = value;
+    this.updateValue?.(this.value);
+    return this.value;
   }
 }

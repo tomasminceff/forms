@@ -29,7 +29,7 @@ export const baseControlWrapperFactory = <
   },
   get disabled() {
     return (
-      (context.parentEnabled ? !context.parentEnabled() : false) ||
+      (context.parentEnabled ? !context.parentEnabled() : true) ||
       context.getState().enabled === false
     );
   },

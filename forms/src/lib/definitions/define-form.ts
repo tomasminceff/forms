@@ -10,7 +10,7 @@ export const defineForm = <
       path: string | undefined,
       initialState: any,
       updateState: (controlState: any) => void,
-      parentEnabled?: () => boolean
+      parentEnabled: () => boolean
     ) => {
       getState: () => any;
       onUpdate: () => void;
@@ -21,26 +21,30 @@ export const defineForm = <
   control: TFormControl
 ): TFormControl extends {
   control: infer IControl;
-  build: (...ars: infer IParams) => { getState: infer IGetState };
+  build: (...ars: infer IParams) => {
+    getState: infer IGetState;
+    // getValue: infer IGetValue;
+  };
 }
-  ? { control: IControl; getState: IGetState }
+  ? { control: IControl; getState: IGetState /*getValue: IGetValue*/ }
   : never => {
   let isUpdating = false;
   let onUpdate: () => void = () => {};
   let getState: () => any = () => {};
+  // let getValue: () => any = () => {};
 
   const builded = control.build(
     name,
     undefined,
     undefined,
-    (value: any) => {
+    (state: any) => {
       if (isUpdating) {
         return;
       }
 
       isUpdating = true;
 
-      let newState = value;
+      let newState = state;
       let oldState;
       let counter = 0;
       do {
