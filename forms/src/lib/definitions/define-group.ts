@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Expand } from '../utils/types';
+import { ControlContext } from './context';
 import type {
   GroupConfig,
   GetGroupControlsValue,
@@ -13,37 +14,14 @@ export const defineGroup = <
 >(
   config: TConfig
 ) => {
-  let value = {};
-  let meta = { ...config, controls: {} };
-
-  const context = {
-    path: undefined as string | undefined,
-    parentEnabled: undefined as (() => boolean) | undefined,
-
-    getValue: () => {
-      return value;
-    },
-    setValue: (newValue: TValue) => {
-      value = newValue;
-    },
-
-    setMeta: (newMeta: typeof meta) => {
-      meta = newMeta;
-    },
-    getMeta: () => meta,
-
-    updateState: (newValue: TValue, newMeta: typeof meta) => {
-      value = newValue;
-      meta = newMeta;
-    },
-  };
+  const context = new ControlContext({}, { ...config, controls: {} });
 
   const getWrapper = <TValue, TControls>(controls: TControls) => ({
     get value() {
-      return {} as TValue;
+      return context.getValue();
     },
     get title() {
-      return meta.title;
+      return context.getMeta().title;
     },
     get path() {
       return context.path;
@@ -52,31 +30,31 @@ export const defineGroup = <
       return controls;
     },
     get editable() {
-      return meta.editable;
+      return context.getMeta().editable;
     },
     get enabled() {
-      return meta.enabled;
+      return context.getMeta().enabled;
     },
     get readonly() {
-      return !meta.editable /** TODO */;
+      return !context.getMeta().editable /** TODO */;
     },
     get disabled() {
       return (
         (context.parentEnabled ? !context.parentEnabled() : true) ||
-        meta.enabled === false
+        context.getMeta().enabled === false
       );
     },
     setValue: (value: TValue) => {
       value;
     },
     setEditable: (editable: boolean | undefined) => {
-      if (editable !== meta.editable) {
-        context.setMeta({ ...meta, editable });
+      if (editable !== context.getMeta().editable) {
+        context.setMeta({ ...context.getMeta(), editable });
       }
     },
     setEnabled: (enabled: boolean | undefined) => {
-      if (enabled !== meta.enabled) {
-        context.setMeta({ ...meta, enabled });
+      if (enabled !== context.getMeta().enabled) {
+        context.setMeta({ ...context.getMeta(), enabled });
       }
     },
   });
@@ -85,7 +63,7 @@ export const defineGroup = <
 
   return {
     control: wrapper,
-    build: buildFactory(meta, context, {}, wrapper),
+    build: buildFactory(context.getMeta(), context, {}, wrapper),
     withControls: <
       TControls extends {
         [id: string]: {
@@ -115,11 +93,17 @@ export const defineGroup = <
 
       return {
         control: wrapper,
-        build: buildFactory(meta, context, controls, wrapper),
+        build: buildFactory(context.getMeta(), context, controls, wrapper),
         onUpdate: (updater: (group: typeof wrapper) => void) => {
           return {
             control: wrapper,
-            build: buildFactory(meta, context, controls, wrapper, updater),
+            build: buildFactory(
+              context.getMeta(),
+              context,
+              controls,
+              wrapper,
+              updater
+            ),
           };
         },
       };
@@ -127,7 +111,7 @@ export const defineGroup = <
     onUpdate: (x: (group: typeof wrapper) => void) => {
       return {
         control: wrapper,
-        build: buildFactory(meta, context, {}, wrapper, x),
+        build: buildFactory(context.getMeta(), context, {}, wrapper, x),
       };
     },
   };
@@ -156,6 +140,10 @@ const buildFactory =
     updateState: (value: any, meta: any) => void,
     parentEnabled: () => boolean
   ) => {
+    context.updateState = updateState;
+    context.path = [path, name].filter((item) => !!item).join('.') ?? undefined;
+    context.parentEnabled = parentEnabled;
+
     const controlStates = Object.entries(controls).reduce(
       (result, entry) => {
         const r = entry[1].build(
@@ -165,19 +153,21 @@ const buildFactory =
           initialMeta?.controls[entry[0]],
           (controlValue: any, controlMeta: any) => {
             const value = context.getValue();
-            context.setValue({
-              ...value,
-              [entry[0]]: controlValue,
-            });
-
             const meta = context.getMeta();
-            context.setMeta({
-              ...meta,
-              controls: {
-                ...meta.controls,
-                [entry[0]]: controlMeta,
+
+            context.setState(
+              {
+                ...value,
+                [entry[0]]: controlValue,
               },
-            });
+              {
+                ...meta,
+                controls: {
+                  ...meta.controls,
+                  [entry[0]]: controlMeta,
+                },
+              }
+            );
           },
           () => !wrapper.disabled
         );
@@ -213,16 +203,6 @@ const buildFactory =
       );
       updater?.(wrapper);
     };
-
-    // is it necessary?
-    const originalSetMeta = context.setMeta;
-    context.setMeta = (meta: TMeta) => {
-      const newMeta = originalSetMeta(meta);
-      updateState(context.getValue(), newMeta);
-    };
-
-    context.path = [path, name].filter((item) => !!item).join('.') ?? undefined;
-    context.parentEnabled = parentEnabled;
 
     return {
       getValue: () =>

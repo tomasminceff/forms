@@ -1,8 +1,4 @@
-import {
-  AbstractControlConfig,
-  ControlContext,
-  AbstractMeta,
-} from './abstract-control';
+import { AbstractControlConfig, ControlContext, AbstractMeta } from './context';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type FieldConfig<TValue> = AbstractControlConfig<TValue> & {};

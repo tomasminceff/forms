@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AbstractMeta, ControlContext } from './abstract-control';
+import { AbstractMeta, ControlContext } from './context';
 import { Wrapper, baseControlWrapperFactory } from './base-wrapper';
 import type { FieldConfig, FieldMeta } from './define-field.types';
 

@@ -1,4 +1,4 @@
-import { ControlContext } from '../abstract-control';
+import { ControlContext } from '../context';
 import { defineField, fieldWrapperFactory } from '../define-field';
 import { FieldConfig, FieldMeta } from '../define-field.types';
 

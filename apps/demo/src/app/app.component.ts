@@ -14,21 +14,26 @@ import {
   standalone: true,
   imports: [RouterModule, CommonModule, InputDirective],
   selector: 'org-root',
-  template: `<button (click)="increment()">Press me</button>
+  styles: [':host { display: flex; column-gap: 50px; }'],
+  template: `
+    <pre>{{ state.getState() | json }}</pre>
     <pre>{{ form | json }}</pre>
     <div>
-      <label>{{ form.controls.text.title }}</label>
-      <input [control]="form.controls.text" />
+      <div>
+        <label>{{ form.controls.text.title }}</label>
+        <input [control]="form.controls.text" />
+      </div>
+      <div>
+        <label>{{ form.controls.subgroup.controls.x.title }}</label>
+        <input [control]="form.controls.subgroup.controls.x" />
+      </div>
+      <div>
+        <label>{{ form.controls.subgroup.controls.y.title }}</label>
+        <input [control]="form.controls.subgroup.controls.y" />
+      </div>
+      <div><button (click)="increment()">Press me</button></div>
     </div>
-    <div>
-      <label>{{ form.controls.subgroup.controls.x.title }}</label>
-      <input [control]="form.controls.subgroup.controls.x" />
-    </div>
-    <div>
-      <label>{{ form.controls.subgroup.controls.y.title }}</label>
-      <input [control]="form.controls.subgroup.controls.y" />
-    </div>
-    <pre>{{ state.getState() | json }}</pre>`,
+  `,
   styleUrl: './app.component.css',
   providers: [CounterStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,17 +43,17 @@ export class AppComponent {
 
   definition = defineGroup<{ a: number }>({ title: 'group' })
     .withControls({
-      text: defineStringField({ title: 'pokus', x: 1 }).onUpdate((field) => {
+      text: defineStringField({ title: 'string', x: 1 }).onUpdate((field) => {
         if (field.disabled) {
           field.setValue(null);
         }
       }),
       subgroup: defineGroup({ title: 'subgroup' })
         .withControls({
-          x: defineStringField({ title: 'x' })
+          x: defineStringField({ title: 'subgroup string' })
             .onUpdate(() => {})
             .validate(() => {}),
-          y: defineNumberField({ title: 'y' })
+          y: defineNumberField({ title: 'subgroup number' })
             .onUpdate((x) => {
               if (x.value === 1) {
                 x.increment();
@@ -79,9 +84,8 @@ export class AppComponent {
 
 // BUGFIX
 
-- value v grupach vo wrapperi nie je spravne
-
 // TODO
+// form stabilizuje stav tak, aby to nebolo rekurzivne - ze si pocka na posledne zmeny a az potom znovu spusti onUpdate
 // optional group
 // zmena name na roznej urovni, napr. zmena poradia riadkov
 // merge grup

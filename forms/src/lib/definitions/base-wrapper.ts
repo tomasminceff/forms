@@ -1,4 +1,4 @@
-import { ControlContext, AbstractMeta } from './abstract-control';
+import { ControlContext, AbstractMeta } from './context';
 
 export const baseControlWrapperFactory = <
   TValue,

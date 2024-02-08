@@ -43,4 +43,11 @@ export class ControlContext<TValue, TMeta extends AbstractMeta<TValue>> {
     this.updateState?.(this.value, this.meta);
     return this.value;
   }
+
+  setState(value: TValue, meta: TMeta) {
+    this.value = value;
+    this.meta = meta;
+
+    this.updateState?.(this.value, this.meta);
+  }
 }
