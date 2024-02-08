@@ -77,7 +77,12 @@ export class AppComponent {
   }
 }
 
+// BUGFIX
+
+- value v grupach vo wrapperi nie je spravne
+
 // TODO
+// optional group
 // zmena name na roznej urovni, napr. zmena poradia riadkov
 // merge grup
 // validacie

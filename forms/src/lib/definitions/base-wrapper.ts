@@ -1,54 +1,54 @@
-import { ControlContext, AbstractControlState } from './abstract-control';
+import { ControlContext, AbstractMeta } from './abstract-control';
 
 export const baseControlWrapperFactory = <
   TValue,
-  TState extends AbstractControlState<TValue> = AbstractControlState<TValue>
+  TMeta extends AbstractMeta<TValue> = AbstractMeta<TValue>
 >(
-  context: ControlContext<TValue, TState>
+  context: ControlContext<TValue, TMeta>
 ) => ({
   get title() {
-    return context.getState().title;
+    return context.getMeta().title;
   },
   get path() {
     return context.path;
   },
   get defaultValue() {
-    return context.getState().defaultValue;
+    return context.getMeta().defaultValue;
   },
   get value() {
-    return context.getState().value;
+    return context.getValue();
   },
   get editable() {
-    return context.getState().editable;
+    return context.getMeta().editable;
   },
   get enabled() {
-    return context.getState().enabled;
+    return context.getMeta().enabled;
   },
   get readonly() {
-    return !context.getState().editable /** TODO */;
+    return !context.getMeta().editable /** TODO */;
   },
   get disabled() {
     return (
       (context.parentEnabled ? !context.parentEnabled() : true) ||
-      context.getState().enabled === false
+      context.getMeta().enabled === false
     );
   },
-  setValue: (value: TValue) => {
-    const state = context.getState();
-    if (value !== state.value) {
-      context.setState({ ...state, value });
+  setValue: (newValue: TValue) => {
+    const value = context.getValue();
+    if (newValue !== value) {
+      context.setValue(newValue);
     }
   },
   setEditable: (editable: boolean | undefined) => {
-    const state = context.getState();
-    if (editable !== state.editable) {
-      context.setState({ ...state, editable });
+    const meta = context.getMeta();
+    if (editable !== meta.editable) {
+      context.setMeta({ ...meta, editable });
     }
   },
   setEnabled: (enabled: boolean | undefined) => {
-    const state = context.getState();
-    if (enabled !== state.enabled) {
-      context.setState({ ...state, enabled });
+    const meta = context.getMeta();
+    if (enabled !== meta.enabled) {
+      context.setMeta({ ...meta, enabled });
     }
   },
   validate: (x: () => Record<string, object>) => {

@@ -1,6 +1,6 @@
 import { ControlContext } from '../abstract-control';
 import { defineField, fieldWrapperFactory } from '../define-field';
-import { FieldConfig, FieldState } from '../define-field.types';
+import { FieldConfig, FieldMeta } from '../define-field.types';
 
 // maxLenght + validation
 
@@ -17,9 +17,9 @@ export const defineStringField = <TConfig extends StringFieldConfig>(
 };
 
 export const stringFieldWrapperFactory = <
-  TState extends FieldState<string | null> = FieldState<string | null>
+  TMeta extends FieldMeta<string | null> = FieldMeta<string | null>
 >(
-  context: ControlContext<string | null, TState>
+  context: ControlContext<string | null, TMeta>
 ) => {
   return fieldWrapperFactory<string | null>(context);
 };

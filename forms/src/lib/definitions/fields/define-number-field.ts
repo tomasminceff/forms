@@ -1,6 +1,6 @@
 import { ControlContext } from '../abstract-control';
 import { defineField, fieldWrapperFactory } from '../define-field';
-import { FieldConfig, FieldState } from '../define-field.types';
+import { FieldConfig, FieldMeta } from '../define-field.types';
 
 export type NumberFieldConfig = FieldConfig<number | null>;
 
@@ -15,28 +15,28 @@ export const defineNumberField = <TConfig extends NumberFieldConfig>(
 };
 
 export const numberFieldWrapperFactory = <
-  TState extends FieldState<number | null> = FieldState<number | null>
+  TMeta extends FieldMeta<number | null> = FieldMeta<number | null>
 >(
-  context: ControlContext<number | null, TState>
+  context: ControlContext<number | null, TMeta>
 ) => {
   // must be Object.assign, deconstruction does not work
   return Object.assign(fieldWrapperFactory<number | null>(context), {
-    setValue: (value: number | null) => {
-      if ((value as unknown) === '') {
-        value = null;
+    setValue: (newValue: number | null) => {
+      if ((newValue as unknown) === '') {
+        newValue = null;
       }
-      if (typeof value === 'string') {
-        value = parseFloat(value as string);
+      if (typeof newValue === 'string') {
+        newValue = parseFloat(newValue as string);
       }
-      const state = context.getState();
-      if (value !== state.value) {
-        context.setState({ ...state, value });
+      const value = context.getValue();
+      if (newValue !== value) {
+        context.setValue(newValue);
       }
     },
     increment() {
-      const state = context.getState();
-      if (null !== state.value) {
-        context.setState({ ...state, value: state.value + 1 });
+      const value = context.getValue();
+      if (null !== value) {
+        context.setValue(value + 1);
       }
     },
   });

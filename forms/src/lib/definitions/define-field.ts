@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AbstractControlState, ControlContext } from './abstract-control';
+import { AbstractMeta, ControlContext } from './abstract-control';
 import { Wrapper, baseControlWrapperFactory } from './base-wrapper';
-import type { FieldConfig, FieldState } from './define-field.types';
+import type { FieldConfig, FieldMeta } from './define-field.types';
 
 export const defineField = <
   TValue,
@@ -11,18 +11,16 @@ export const defineField = <
   defaultValue: TValue,
   config: TConfig,
   wrapperFactory: (
-    context: ControlContext<TValue, FieldState<TValue>>
+    context: ControlContext<TValue, FieldMeta<TValue>>
   ) => TWrapper
 ) => {
-  const state: FieldState<TValue> = {
-    value: defaultValue,
+  const value = defaultValue;
+  const meta: FieldMeta<TValue> = {
+    defaultValue,
     ...config,
   };
 
-  const context = new ControlContext<TValue, FieldState<TValue>>(
-    state.value,
-    state
-  );
+  const context = new ControlContext<TValue, FieldMeta<TValue>>(value, meta);
   const wrapper = wrapperFactory(context);
 
   return {
@@ -52,11 +50,11 @@ export const defineField = <
 const buildFactory =
   <
     TValue,
-    TState extends AbstractControlState<TValue>,
+    TMeta extends AbstractMeta<TValue>,
     TWrapper,
     TUpdater extends (wrapper: TWrapper) => void
   >(
-    context: ControlContext<TValue, TState>,
+    context: ControlContext<TValue, TMeta>,
     wrapper: TWrapper,
     updater?: TUpdater,
     validator?: () => any
@@ -64,14 +62,18 @@ const buildFactory =
   (
     name: string,
     parentPath: string | undefined,
-    initialState: TState | undefined,
-    updateState: (controlState: TState) => void,
+    initialValue: TValue | undefined,
+    initialMeta: TMeta | undefined,
+    updateState: (value: TValue, meta: TMeta) => void,
     parentEnabled: () => boolean
   ) => {
-    if (initialState) {
-      context.setState(initialState);
+    if (initialMeta) {
+      if (initialValue) {
+        context.setValue(initialValue);
+      }
+      context.setMeta(initialMeta);
     } else {
-      updateState(context.getState());
+      updateState(context.getValue(), context.getMeta());
     }
 
     context.path = [parentPath, name].filter((item) => !!item).join('.');
@@ -79,7 +81,8 @@ const buildFactory =
     context.updateState = updateState;
 
     return {
-      getState: () => context.getState(),
+      getValue: () => context.getValue(),
+      getMeta: () => context.getMeta(),
       onUpdate: () => {
         updater?.(wrapper);
       },
@@ -89,9 +92,9 @@ const buildFactory =
 
 export const fieldWrapperFactory = <
   TValue,
-  TState extends FieldState<TValue> = FieldState<TValue>
+  TMeta extends FieldMeta<TValue> = FieldMeta<TValue>
 >(
-  context: ControlContext<TValue, TState>
+  context: ControlContext<TValue, TMeta>
 ) => {
   return baseControlWrapperFactory<TValue>(context);
 };

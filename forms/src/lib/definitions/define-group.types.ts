@@ -27,10 +27,12 @@ export type GetGroupControls<TControls> = {
     : never;
 };
 
-export type GetGroupControlsState<TControls> = {
+export type GetGroupControlsMeta<TControls> = {
   [K in keyof TControls]: TControls[K] extends {
-    build: (...ars: infer IParams) => { getState: () => infer IGetState };
+    build: (...ars: infer IParams) => {
+      getMeta: () => infer IGetMeta;
+    };
   }
-    ? IGetState
+    ? IGetMeta
     : never;
 };

@@ -8,11 +8,13 @@ export const defineForm = <
     build: (
       name: string,
       path: string | undefined,
-      initialState: any,
-      updateState: (controlState: any) => void,
+      initialValue: any,
+      initialMeta: any,
+      updateState: (value: any, meta: any) => void,
       parentEnabled: () => boolean
     ) => {
-      getState: () => any;
+      getValue: () => any;
+      getMeta: () => any;
       onUpdate: () => void;
     };
   }
@@ -22,37 +24,51 @@ export const defineForm = <
 ): TFormControl extends {
   control: infer IControl;
   build: (...ars: infer IParams) => {
-    getState: infer IGetState;
-    // getValue: infer IGetValue;
+    getMeta: infer IGetMeta;
+    getValue: infer IGetValue;
   };
 }
-  ? { control: IControl; getState: IGetState /*getValue: IGetValue*/ }
+  ? {
+      control: IControl;
+      getMeta: IGetMeta;
+      getValue: IGetValue;
+      getState: () => { value: any; meta: any };
+    }
   : never => {
   let isUpdating = false;
   let onUpdate: () => void = () => {};
-  let getState: () => any = () => {};
-  // let getValue: () => any = () => {};
+
+  let getValue: () => any = () => {};
+  let getMeta: () => any = () => {};
 
   const builded = control.build(
     name,
     undefined,
     undefined,
-    (state: any) => {
+    undefined,
+    (value: any, meta: any) => {
       if (isUpdating) {
         return;
       }
 
       isUpdating = true;
 
-      let newState = state;
-      let oldState;
+      let newValue = value;
+      let newMeta = meta;
+      let oldValue;
+      let oldMeta;
       let counter = 0;
       do {
-        oldState = newState;
+        oldValue = newValue;
+        oldMeta = newMeta;
         onUpdate();
-        newState = getState();
+        newValue = getValue();
+        newMeta = getMeta();
         counter++;
-      } while (newState !== oldState && counter <= MAX_UPDATES);
+      } while (
+        (newMeta !== oldMeta || newValue !== oldValue) &&
+        counter <= MAX_UPDATES
+      );
 
       if (counter >= MAX_UPDATES) {
         throw new Error('unstable or too complex');
@@ -64,10 +80,13 @@ export const defineForm = <
   );
 
   onUpdate = builded.onUpdate;
-  getState = builded.getState;
+  getValue = builded.getValue;
+  getMeta = builded.getMeta;
 
   return {
-    getState: builded.getState,
+    getValue,
+    getMeta,
+    getState: () => ({ value: getValue(), meta: getMeta() }),
     control: control.control,
   } as any;
 };

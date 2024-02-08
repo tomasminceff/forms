@@ -4,11 +4,13 @@ export type FormControl = {
   build: (
     name: string,
     path?: string,
-    initialState?: any,
-    updateState?: (controlState: any) => void,
+    initialValue?: any,
+    initialMeta?: any,
+    updateState?: (value: any, meta: any) => void,
     parentEnabled?: () => boolean
   ) => {
-    getState: () => any;
+    getValue: () => any;
+    getMeta: () => any;
     onUpdate: () => void;
   };
 };

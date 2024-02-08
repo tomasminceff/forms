@@ -13,31 +13,26 @@ export type AbstractControlConfig<TValue> = {
   disabled?: never;
 };
 
-export type AbstractControlState<TValue> = {
+export type AbstractMeta<TValue> = {
   title: string;
   defaultValue?: TValue;
-  value: TValue;
   editable?: boolean;
   enabled?: boolean;
 };
 
-export class ControlContext<
-  TValue,
-  TState extends AbstractControlState<TValue>
-> {
+export class ControlContext<TValue, TMeta extends AbstractMeta<TValue>> {
   path: string | undefined;
   parentEnabled?: () => boolean;
-  updateState?: (controlState: any) => void;
-  updateValue?: (value: any) => void;
+  updateState?: (value: any, meta: any) => void;
 
-  constructor(private value: TValue, private state: TState) {}
-  getState() {
-    return this.state;
+  constructor(private value: TValue, private meta: TMeta) {}
+  getMeta() {
+    return this.meta;
   }
-  setState(state: TState) {
-    this.state = state;
-    this.updateState?.(this.state);
-    return this.state;
+  setMeta(meta: TMeta) {
+    this.meta = meta;
+    this.updateState?.(this.value, this.meta);
+    return this.meta;
   }
 
   getValue() {
@@ -45,7 +40,7 @@ export class ControlContext<
   }
   setValue(value: TValue) {
     this.value = value;
-    this.updateValue?.(this.value);
+    this.updateState?.(this.value, this.meta);
     return this.value;
   }
 }
