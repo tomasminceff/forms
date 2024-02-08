@@ -14,13 +14,10 @@ export const defineField = <
     context: ControlContext<TValue, FieldMeta<TValue>>
   ) => TWrapper
 ) => {
-  const value = defaultValue;
-  const meta: FieldMeta<TValue> = {
+  const context = new ControlContext<TValue, FieldMeta<TValue>>(defaultValue, {
     defaultValue,
     ...config,
-  };
-
-  const context = new ControlContext<TValue, FieldMeta<TValue>>(value, meta);
+  });
   const wrapper = wrapperFactory(context);
 
   return {

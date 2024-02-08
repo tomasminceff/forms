@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { CounterStore } from './app.component.store';
 import { CommonModule } from '@angular/common';
 import {
+  GetGroupControlsValue,
   InputDirective,
   defineForm,
   defineGroup,
@@ -24,12 +25,12 @@ import {
         <input [control]="form.controls.text" />
       </div>
       <div>
-        <label>{{ form.controls.subgroup.controls.x.title }}</label>
-        <input [control]="form.controls.subgroup.controls.x" />
+        <label>{{ form.controls.subgroup.controls.string.title }}</label>
+        <input [control]="form.controls.subgroup.controls.string" />
       </div>
       <div>
-        <label>{{ form.controls.subgroup.controls.y.title }}</label>
-        <input [control]="form.controls.subgroup.controls.y" />
+        <label>{{ form.controls.subgroup.controls.number.title }}</label>
+        <input [control]="form.controls.subgroup.controls.number" />
       </div>
       <div><button (click)="increment()">Press me</button></div>
     </div>
@@ -50,10 +51,10 @@ export class AppComponent {
       }),
       subgroup: defineGroup({ title: 'subgroup' })
         .withControls({
-          x: defineStringField({ title: 'subgroup string' })
+          string: defineStringField({ title: 'subgroup string' })
             .onUpdate(() => {})
             .validate(() => {}),
-          y: defineNumberField({ title: 'subgroup number' })
+          number: defineNumberField({ title: 'subgroup number' })
             .onUpdate((x) => {
               if (x.value === 1) {
                 x.increment();
@@ -66,11 +67,12 @@ export class AppComponent {
         }),
     })
     .onUpdate((group) => {
-      group.controls.subgroup.controls.x;
+      group.controls.subgroup.controls.string;
     });
 
   state = defineForm('form', this.definition);
   form = this.state.control;
+  x = this.definition.control.controls.subgroup.controls.number;
 
   increment() {
     this.form.setEnabled(!this.form.enabled);

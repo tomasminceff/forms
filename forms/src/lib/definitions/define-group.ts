@@ -18,7 +18,7 @@ export const defineGroup = <
 
   const getWrapper = <TValue, TControls>(controls: TControls) => ({
     get value() {
-      return context.getValue();
+      return context.getValue() as TValue;
     },
     get title() {
       return context.getMeta().title;
@@ -27,7 +27,7 @@ export const defineGroup = <
       return context.path;
     },
     get controls() {
-      return controls;
+      return controls as TControls;
     },
     get editable() {
       return context.getMeta().editable;
