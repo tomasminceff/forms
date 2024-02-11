@@ -16,7 +16,7 @@ export const defineGroup = <
 ) => {
   const context = new ControlContext({}, { ...config, controls: {} });
 
-  const getWrapper = <TValue, TControls>(controls: TControls) => ({
+  const getApi = <TValue, TControls>(controls: TControls) => ({
     get value() {
       return context.getValue() as TValue;
     },
@@ -59,11 +59,11 @@ export const defineGroup = <
     },
   });
 
-  const wrapper = getWrapper<TValue, Record<string, never>>({});
+  const api = getApi<TValue, Record<string, never>>({});
 
   return {
-    control: wrapper,
-    build: buildFactory(context.getMeta(), context, {}, wrapper),
+    control: api,
+    build: buildFactory(context.getMeta(), context, {}, api),
     withControls: <
       TControls extends {
         [id: string]: {
@@ -81,7 +81,7 @@ export const defineGroup = <
     >(
       controls: TControls
     ) => {
-      const wrapper = getWrapper<
+      const api = getApi<
         Expand<TValue & GetGroupControlsValue<TControls>>,
         Expand<GetGroupControls<TControls>>
       >(
@@ -92,26 +92,26 @@ export const defineGroup = <
       );
 
       return {
-        control: wrapper,
-        build: buildFactory(context.getMeta(), context, controls, wrapper),
-        onUpdate: (updater: (group: typeof wrapper) => void) => {
+        control: api,
+        build: buildFactory(context.getMeta(), context, controls, api),
+        onUpdate: (updater: (group: typeof api) => void) => {
           return {
-            control: wrapper,
+            control: api,
             build: buildFactory(
               context.getMeta(),
               context,
               controls,
-              wrapper,
+              api,
               updater
             ),
           };
         },
       };
     },
-    onUpdate: (x: (group: typeof wrapper) => void) => {
+    onUpdate: (x: (group: typeof api) => void) => {
       return {
-        control: wrapper,
-        build: buildFactory(context.getMeta(), context, {}, wrapper, x),
+        control: api,
+        build: buildFactory(context.getMeta(), context, {}, api, x),
       };
     },
   };
@@ -122,13 +122,13 @@ const buildFactory =
     TValue,
     TMeta,
     TControls extends object,
-    TWrapper extends { disabled: boolean | undefined },
-    TUpdater extends (wrapper: TWrapper) => void
+    TControlApi extends { disabled: boolean | undefined },
+    TUpdater extends (api: TControlApi) => void
   >(
     state: TMeta,
     context: any,
     controls: TControls,
-    wrapper: TWrapper,
+    api: TControlApi,
     updater?: TUpdater
     // validator?: () => any
   ) =>
@@ -169,7 +169,7 @@ const buildFactory =
               }
             );
           },
-          () => !wrapper.disabled
+          () => !api.disabled
         );
         result.value[entry[0]] = r.getValue(); // TODO: is it necessary?
         result.meta[entry[0]] = r.getMeta();
@@ -201,7 +201,7 @@ const buildFactory =
       Object.values<() => void>(controlStates.onUpdate).forEach((onUpdate) =>
         onUpdate()
       );
-      updater?.(wrapper);
+      updater?.(api);
     };
 
     return {

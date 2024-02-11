@@ -1,44 +1,44 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AbstractMeta, ControlContext } from './context';
-import { Wrapper, baseControlWrapperFactory } from './base-wrapper';
+import { ControlApi, baseControlApiFactory } from './base-api';
 import type { FieldConfig, FieldMeta } from './define-field.types';
 
 export const defineField = <
   TValue,
   TConfig extends FieldConfig<TValue>,
-  TWrapper extends Wrapper<TValue>
+  TControlApi extends ControlApi<TValue>
 >(
   defaultValue: TValue,
   config: TConfig,
-  wrapperFactory: (
+  controlApiFactory: (
     context: ControlContext<TValue, FieldMeta<TValue>>
-  ) => TWrapper
+  ) => TControlApi
 ) => {
   const context = new ControlContext<TValue, FieldMeta<TValue>>(defaultValue, {
     defaultValue,
     ...config,
   });
-  const wrapper = wrapperFactory(context);
+  const api = controlApiFactory(context);
 
   return {
-    control: wrapper,
-    build: buildFactory(context, wrapper, undefined),
-    onUpdate: (updater: (field: typeof wrapper) => void) => {
+    control: api,
+    build: buildFactory(context, api, undefined),
+    onUpdate: (updater: (field: typeof api) => void) => {
       return {
-        control: wrapper,
-        build: buildFactory(context, wrapper, updater),
+        control: api,
+        build: buildFactory(context, api, updater),
         validate: (validator: () => any) => {
           return {
-            control: wrapper,
-            build: buildFactory(context, wrapper, updater, validator),
+            control: api,
+            build: buildFactory(context, api, updater, validator),
           };
         },
       };
     },
     validate: (validator: () => any) => {
       return {
-        control: wrapper,
-        build: buildFactory(context, wrapper, undefined, validator),
+        control: api,
+        build: buildFactory(context, api, undefined, validator),
       };
     },
   };
@@ -48,11 +48,11 @@ const buildFactory =
   <
     TValue,
     TMeta extends AbstractMeta<TValue>,
-    TWrapper,
-    TUpdater extends (wrapper: TWrapper) => void
+    TControlApi,
+    TUpdater extends (api: TControlApi) => void
   >(
     context: ControlContext<TValue, TMeta>,
-    wrapper: TWrapper,
+    api: TControlApi,
     updater?: TUpdater,
     validator?: () => any
   ) =>
@@ -81,19 +81,19 @@ const buildFactory =
       getValue: () => context.getValue(),
       getMeta: () => context.getMeta(),
       onUpdate: () => {
-        updater?.(wrapper);
+        updater?.(api);
       },
       validator,
     };
   };
 
-export const fieldWrapperFactory = <
+export const fieldApiFactory = <
   TValue,
   TMeta extends FieldMeta<TValue> = FieldMeta<TValue>
 >(
   context: ControlContext<TValue, TMeta>
 ) => {
-  return baseControlWrapperFactory<TValue>(context);
+  return baseControlApiFactory<TValue>(context);
 };
 
 // bivariant hack: https://www.typescriptlang.org/play?ssl=4&ssc=101&pln=4&pc=1#code/MYGwhgzhAECCB2BLAtmE0De0AOAnRAbmAC4Cm0AHgFwCu8AJqQGaLyn3QC+AsAFCiQYAEQD2Ac2ikKZBjAQo0mHPiJlo9KtDqMWbDj159iAT2zkAQoTD4w8YgFECpOwAlb9EKVwAee5OnO9HJIqCAAfNAAvEoARlY28MCkbsAA1gAUpE52mvYAlJoEIoj6ANoARHFECUkpqeUAugDcRqbkjs7EbgyePn5SMkFwIWgR0ZnZxLl5URFFJXx8nsTQIrmT3R5e3vKhY9Dpa9CiYjOREVic0AD019BMYIggMNpe0BDE+MDEAGJ034gRPAACptCBLUgrEQAJk0lmqiFsDg27l6OxG4SiByOJzOFy4NzuHye6BEqWgWgYbw+X1+-2IgJBYOgQA

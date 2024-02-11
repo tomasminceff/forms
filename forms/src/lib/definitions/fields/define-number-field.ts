@@ -1,5 +1,5 @@
 import { ControlContext } from '../context';
-import { defineField, fieldWrapperFactory } from '../define-field';
+import { defineField, fieldApiFactory } from '../define-field';
 import { FieldConfig, FieldMeta } from '../define-field.types';
 
 export type NumberFieldConfig = FieldConfig<number | null>;
@@ -10,17 +10,17 @@ export const defineNumberField = <TConfig extends NumberFieldConfig>(
   return defineField(
     config.defaultValue ?? null,
     { type: 'number' as const } && config,
-    numberFieldWrapperFactory
+    numberFieldApiFactory
   );
 };
 
-export const numberFieldWrapperFactory = <
+export const numberFieldApiFactory = <
   TMeta extends FieldMeta<number | null> = FieldMeta<number | null>
 >(
   context: ControlContext<number | null, TMeta>
 ) => {
   // must be Object.assign, deconstruction does not work
-  return Object.assign(fieldWrapperFactory<number | null>(context), {
+  return Object.assign(fieldApiFactory<number | null>(context), {
     setValue: (newValue: number | null) => {
       if ((newValue as unknown) === '') {
         newValue = null;

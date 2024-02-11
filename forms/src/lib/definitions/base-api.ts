@@ -1,6 +1,6 @@
 import { ControlContext, AbstractMeta } from './context';
 
-export const baseControlWrapperFactory = <
+export const baseControlApiFactory = <
   TValue,
   TMeta extends AbstractMeta<TValue> = AbstractMeta<TValue>
 >(
@@ -57,6 +57,6 @@ export const baseControlWrapperFactory = <
   },
 });
 
-export type Wrapper<TValue> = ReturnType<
-  typeof baseControlWrapperFactory<TValue>
+export type ControlApi<TValue> = ReturnType<
+  typeof baseControlApiFactory<TValue>
 >;
